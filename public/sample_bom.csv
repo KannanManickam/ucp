@@ -1,0 +1,8 @@
+MPN,Quantity,Reference,Description
+ATMMEGA328P-PU,1,U1,Microcontroller
+LM7805,1,U2,Voltage Regulator 5V
+10k,5,R1-R5,Resistor 10k Ohm
+100nF,2,C1-C2,Capacitor Ceramic
+LED-RED,2,D1-D2,Red LED 5mm
+1N4007,1,D3,Diode 1A 1000V
+HC-SR04,1,S1,Ultrasonic Sensor
