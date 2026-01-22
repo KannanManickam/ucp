@@ -7,6 +7,7 @@ import { useUcp } from '../context/UcpContext';
 
 import { BomAnalysisTable } from '../components/BomAnalysisTable';
 import { LogViewer } from '../components/LogViewer';
+import { SupplyChainMap } from '../components/SupplyChainMap';
 
 export function BomUploadPage() {
     const [isDragOver, setIsDragOver] = useState(false);
@@ -56,8 +57,8 @@ export function BomUploadPage() {
     };
 
     return (
-        <div className="container max-w-7xl mx-auto px-4 py-12 md:py-16 h-[calc(100vh-80px)]">
-            <div className="mb-6 flex justify-between items-end">
+        <div className="container max-w-7xl mx-auto px-4 py-8 h-[calc(100vh-80px)]">
+            <div className="mb-6 flex justify-between items-end shrink-0">
                 <div>
                     <h1 className="text-3xl font-bold mb-2">Upload Bill of Materials</h1>
                     <p className="text-muted-foreground">Supported formats: CSV, Excel, KiCad, Eagle</p>
@@ -66,10 +67,10 @@ export function BomUploadPage() {
 
             <div className="grid lg:grid-cols-3 gap-6 h-[calc(100%-120px)]">
                 {/* Left: Upload / Analysis Area */}
-                <div className="lg:col-span-2 flex flex-col gap-6 h-full">
+                <div className="lg:col-span-2 flex flex-col gap-6 h-full overflow-y-auto pr-2 scrollbar-hide">
                     {!fileUploaded && !analyzing && !complete && (
                         <div
-                            className={`flex-1 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center transition-colors ${isDragOver
+                            className={`flex-1 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center transition-colors min-h-[400px] ${isDragOver
                                 ? 'border-blue-500 bg-blue-500/10'
                                 : 'border-white/20 hover:border-white/40 bg-white/5'
                                 }`}
@@ -111,8 +112,20 @@ export function BomUploadPage() {
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="flex-1 flex flex-col"
+                                className="w-full flex-col gap-6"
                             >
+                                {/* LIVE SUPPLY CHAIN MAP (Visible during processing/analysis) */}
+                                {analyzing && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="mb-6 w-full"
+                                    >
+                                        <SupplyChainMap active={true} />
+                                    </motion.div>
+                                )}
+
                                 <BomAnalysisTable
                                     onComplete={onAnalysisComplete}
                                     isProcessing={analyzing}
@@ -125,7 +138,7 @@ export function BomUploadPage() {
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="p-6 rounded-xl bg-green-500/10 border border-green-500/20"
+                                className="p-6 rounded-xl bg-green-500/10 border border-green-500/20 mt-6"
                             >
                                 <div className="flex items-center mb-2 text-green-400 font-semibold">
                                     <CheckCircle className="mr-2 h-5 w-5" />
@@ -159,7 +172,10 @@ export function BomUploadPage() {
 
                 {/* Right: Embedded Agent Stream */}
                 <div className="lg:col-span-1 h-full flex flex-col">
-                    <div className="flex-1 rounded-xl bg-black/40 border border-white/10 overflow-hidden flex flex-col">
+                    <div className="flex-1 rounded-xl bg-black/40 border border-white/10 overflow-hidden flex flex-col min-h-[400px]">
+                        <div className="p-3 bg-white/5 border-b border-white/10 font-semibold text-sm text-blue-400 flex items-center">
+                            UCP Agent Activity
+                        </div>
                         <LogViewer embedded className="flex-1" />
                     </div>
                 </div>

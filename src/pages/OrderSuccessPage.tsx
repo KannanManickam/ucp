@@ -1,15 +1,39 @@
-import React, { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { CheckCircle, ShieldCheck, ShoppingBag, Download } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle, ShieldCheck, ShoppingBag, Download, Lock, RefreshCw, Key, Fingerprint } from 'lucide-react';
 import { Button } from '../components/Button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LogViewer } from '../components/LogViewer';
+import { useUcp } from '../context/UcpContext';
 
 export function OrderSuccessPage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { addLog } = useUcp();
 
     const { groupedItems, total, savings } = location.state || {};
+
+    // Trigger post-order verification logs
+    useEffect(() => {
+        if (!groupedItems) return;
+
+        const timer1 = setTimeout(() => {
+            addLog('Verifying Payment Signatures [ED25519]...', 'UCP-Network', 'json', {
+                "Algorithm": "ED25519",
+                "Hash": "0x7f2...a9"
+            });
+        }, 1000);
+
+        const timer2 = setTimeout(() => {
+            addLog('Cross-referencing supplier nonces...', 'Agent');
+        }, 2500);
+
+        const timer3 = setTimeout(() => {
+            addLog('Order finalized. Smart Contract executed.', 'System');
+        }, 4000);
+
+        return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
+    }, [groupedItems]);
 
     // Fallback if accessed directly
     if (!groupedItems) {
@@ -96,12 +120,12 @@ export function OrderSuccessPage() {
                                 >
                                     <div className="p-4 bg-white/5 border-b border-white/10 flex justify-between items-center">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg">
-                                                <ShieldCheck className="h-4 w-4" />
-                                            </div>
+                                            {/* Security Badge Component replaced the static icon */}
+                                            <SecurityBadge delay={index * 800} />
+
                                             <div>
                                                 <div className="font-semibold text-white">{supplier}</div>
-                                                <div className="text-xs text-muted-foreground font-mono">ID: TX-{Math.floor(Math.random() * 10000)}</div>
+                                                <div className="text-xs text-muted-foreground font-mono">ID: TX-{supplier.length}9{Math.floor(supplier.length * 314)}</div>
                                             </div>
                                         </div>
                                         <div className="text-right">
@@ -147,6 +171,78 @@ export function OrderSuccessPage() {
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function SecurityBadge({ delay = 0 }: { delay?: number }) {
+    const [status, setStatus] = useState<'scanning' | 'verifying' | 'secured'>('scanning');
+
+    useEffect(() => {
+        const t1 = setTimeout(() => setStatus('verifying'), 1000 + delay);
+        const t2 = setTimeout(() => setStatus('secured'), 3000 + delay);
+        return () => { clearTimeout(t1); clearTimeout(t2); };
+    }, [delay]);
+
+    return (
+        <div className="flex items-center gap-2">
+            <div className={`p-2 rounded-lg transition-colors duration-500 overflow-hidden relative ${status === 'secured' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                status === 'verifying' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                    'bg-white/5 text-muted-foreground'
+                }`}>
+                <AnimatePresence mode="wait">
+                    {status === 'scanning' && (
+                        <motion.div
+                            key="scan"
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        >
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                        </motion.div>
+                    )}
+                    {status === 'verifying' && (
+                        <motion.div
+                            key="verify"
+                            initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                        >
+                            <Key className="h-4 w-4 animate-pulse" />
+                        </motion.div>
+                    )}
+                    {status === 'secured' && (
+                        <motion.div
+                            key="secure"
+                            initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
+                        >
+                            <ShieldCheck className="h-4 w-4" />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Scan line effect for initial state */}
+                {status !== 'secured' && (
+                    <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent w-full h-full"
+                        animate={{ x: ['-100%', '100%'] }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                    />
+                )}
+            </div>
+
+            {status === 'secured' && (
+                <motion.div
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    className="overflow-hidden whitespace-nowrap"
+                >
+                    <div className="flex flex-col">
+                        <span className="text-[9px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                            <Fingerprint className="h-3 w-3" /> UCP Verified
+                        </span>
+                        <span className="text-[8px] text-muted-foreground font-mono">
+                            0x{Math.random().toString(16).substr(2, 6)}...
+                        </span>
+                    </div>
+                </motion.div>
+            )}
         </div>
     );
 }

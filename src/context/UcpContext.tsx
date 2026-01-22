@@ -2,18 +2,20 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type AgentStatus = 'idle' | 'scanning' | 'negotiating' | 'purchasing' | 'optimizing';
 
-interface UcpLog {
+export interface UcpLog {
     id: string;
     timestamp: Date;
     message: string;
     source: 'System' | 'Agent' | 'UCP-Network';
+    type: 'text' | 'json' | 'reasoning';
+    data?: any;
 }
 
 interface UcpContextType {
     status: AgentStatus;
     setStatus: (status: AgentStatus) => void;
     logs: UcpLog[];
-    addLog: (message: string, source?: UcpLog['source']) => void;
+    addLog: (message: string, source?: UcpLog['source'], type?: UcpLog['type'], data?: any) => void;
     networkLatency: number;
 }
 
@@ -35,12 +37,14 @@ export function UcpProvider({ children }: { children: React.ReactNode }) {
         return () => clearInterval(interval);
     }, []);
 
-    const addLog = (message: string, source: UcpLog['source'] = 'Agent') => {
-        const newLog = {
+    const addLog = (message: string, source: UcpLog['source'] = 'Agent', type: UcpLog['type'] = 'text', data?: any) => {
+        const newLog: UcpLog = {
             id: Math.random().toString(36).substr(2, 9),
             timestamp: new Date(),
             message,
-            source
+            source,
+            type,
+            data
         };
         setLogs(prev => [newLog, ...prev].slice(0, 50));
     };

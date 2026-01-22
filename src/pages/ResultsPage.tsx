@@ -26,6 +26,7 @@ export function ResultsPage() {
     const baseTotal = items.reduce((acc: number, item: any) => acc + ((item.price || 0) * item.quantity), 0);
     const [negotiating, setNegotiating] = useState(true);
     const [recalculating, setRecalculating] = useState(false);
+    const [purchasing, setPurchasing] = useState(false);
     const [savings, setSavings] = useState(0);
 
     // Start at 0 for "tick up" effect
@@ -38,6 +39,7 @@ export function ResultsPage() {
         setSavings(0);
         setNegotiating(true);
         setRecalculating(false);
+        setPurchasing(false);
         setActiveTab('overview');
 
         const groups: any = { 'DigiKey': [], 'Mouser': [], 'Adafruit': [] };
@@ -55,7 +57,7 @@ export function ResultsPage() {
     };
 
     const handleStrategyChange = (strategy: 'cheapest' | 'fastest' | 'balanced') => {
-        if (negotiating || recalculating || strategy === selectedStrategy) return;
+        if (negotiating || recalculating || purchasing || strategy === selectedStrategy) return;
 
         setSelectedStrategy(strategy);
         setRecalculating(true);
@@ -78,17 +80,45 @@ export function ResultsPage() {
         // Trigger initial tick up almost immediately
         setCurrentTotal(baseTotal * 1.15);
 
+        // 1. Initial Logic Analysis (Reasoning Block)
+        timeouts.push(setTimeout(() => {
+            addLog('Analyzing supplier constraints...', 'Agent', 'reasoning', {
+                "Vendors": 3,
+                "Constraints": "Lead-Time < 3 days"
+            });
+        }, 800));
+
+        // 2. DigiKey Negotiation (JSON Handshake)
+        timeouts.push(setTimeout(() => {
+            addLog('DigiKey API Handshake', 'UCP-Network', 'json', {
+                "endpoint": "/v3/quote",
+                "token": "0x8a...3f",
+                "items": items.length
+            });
+        }, 1200));
+
+        // 3. Discount Applied
         timeouts.push(setTimeout(() => {
             addLog('DigiKey: Volume discount applied (-5%)', 'Agent');
             setSavings(baseTotal * 0.05);
             setCurrentTotal(prev => prev * 0.95);
-        }, 1500));
+        }, 2200));
+
+        // 4. Detailed Optimization Thought
+        timeouts.push(setTimeout(() => {
+            addLog('Optimizing Shipping Route', 'Agent', 'reasoning', {
+                "Strategy": "Consolidation",
+                "Original": "3 Shipments",
+                "New": "1 Combined Shipment",
+                "Saved": "$18.50"
+            });
+        }, 3000));
 
         timeouts.push(setTimeout(() => {
             addLog('Mouser: Combined shipping logic optimized route.', 'UCP-Network');
             setSavings(prev => prev + (baseTotal * 0.03));
             setCurrentTotal(prev => prev * 0.97);
-        }, 3000));
+        }, 4500));
 
         timeouts.push(setTimeout(() => {
             addLog('Adafruit: Applied loyalist token coupon.', 'Agent');
@@ -97,29 +127,39 @@ export function ResultsPage() {
             setNegotiating(false);
             setStatus('idle');
             addLog('Negotiation complete. Best price locked.', 'System');
-        }, 4500));
+        }, 5500));
 
         return () => timeouts.forEach(clearTimeout);
     }, [items]);
 
     const handlePurchase = () => {
-        if (negotiating || recalculating) return;
+        if (negotiating || recalculating || purchasing) return;
 
+        setPurchasing(true); // Disable button immediately
         setStatus('purchasing');
-        addLog('Initiating transaction with DigiKey...', 'Agent');
-        addLog('Initiating transaction with Mouser...', 'Agent');
-        addLog('Initiating transaction with Adafruit...', 'Agent');
+        addLog('Initiating UCP autonomous payment sequence...', 'Agent');
 
         setTimeout(() => {
-            addLog('DigiKey Payment Authorized (Token: 0x8a...3f)', 'UCP-Network');
-        }, 1000);
+            addLog('Verifying Smart Contract Liquidity', 'UCP-Network', 'json', {
+                "Contract": "0x7a2...bb",
+                "Gas": "0.004 ETH",
+                "Method": "batchSettle"
+            });
+        }, 800);
 
         setTimeout(() => {
-            addLog('Mouser Payment Authorized', 'UCP-Network');
-            addLog('Adafruit Payment Authorized', 'UCP-Network');
+            addLog('DigiKey Payment Authorized', 'UCP-Network', 'reasoning', {
+                "Protocol": "UCP-v2",
+                "Auth": "ED25519-Signed",
+                "Nonce": "49201"
+            });
+        }, 1600);
+
+        setTimeout(() => {
+            addLog('Mouser + Adafruit Batch Settled', 'UCP-Network');
             setStatus('idle');
             navigate('/success', { state: { groupedItems, total: currentTotal, savings } });
-        }, 2500);
+        }, 3000);
     };
 
     if (items.length === 0) {
@@ -238,9 +278,14 @@ export function ResultsPage() {
                                 size="lg"
                                 className="w-full bg-blue-600 hover:bg-blue-500 text-white h-12"
                                 onClick={handlePurchase}
-                                disabled={negotiating || recalculating}
+                                disabled={negotiating || recalculating || purchasing}
                             >
-                                {negotiating ? (
+                                {purchasing ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Processing Order...
+                                    </>
+                                ) : negotiating ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Negotiating...
